@@ -23,14 +23,14 @@ class UIOverlay:
 
     def draw_status_hud(self, frame, fps, face_detected, raw_gaze, filtered_gaze, calib_gaze,
                         is_calibrated, is_calibrating, intent_info=None, demo_mode=True,
-                        is_logging=True, log_count=0):
+                        is_logging=True, log_count=0, is_topmost=False):
         """
         Draws the main status information panel on the top-left corner.
         """
         h, w = frame.shape[:2]
 
         # Draw semi-transparent background card
-        panel_h = 390 if intent_info else 300
+        panel_h = 410 if intent_info else 320
         overlay = frame.copy()
         cv2.rectangle(overlay, (10, 10), (360, panel_h), (20, 20, 20), -1)
         cv2.addWeighted(overlay, 0.75, frame, 0.25, 0, frame)
@@ -60,7 +60,7 @@ class UIOverlay:
         elif is_calibrated:
             c_text, c_color = "COMPLETE", (0, 255, 0)
         else:
-            c_text, c_color = "PRESS 'C' TO START", (0, 165, 255)
+            c_text, c_color = "PRESS 'C' TO CALIB", (0, 165, 255)
 
         cv2.putText(frame, f"Calibration: {c_text}", (20, 92),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.44, c_color, 1, cv2.LINE_AA)
@@ -71,11 +71,10 @@ class UIOverlay:
         cv2.putText(frame, f"Control:     {mode_text}", (20, 109),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.44, mode_color, 1, cv2.LINE_AA)
 
-        # Data Logging state
-        log_text = f"REC ({log_count} frames)" if is_logging else "PAUSED"
-        log_color = (0, 255, 0) if is_logging else (140, 140, 140)
-        cv2.putText(frame, f"Telemetry:   {log_text}", (20, 126),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.44, log_color, 1, cv2.LINE_AA)
+        # Telemetry / PiP state
+        top_text = "[ON-TOP]" if is_topmost else "[NORMAL]"
+        cv2.putText(frame, f"Window:      {top_text}", (20, 126),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.44, (200, 200, 200), 1, cv2.LINE_AA)
 
         # Gaze coordinates
         if calib_gaze and calib_gaze[0] is not None:
@@ -93,7 +92,7 @@ class UIOverlay:
         if intent_info:
             intent_label = intent_info.get("intent_label", "NONE")
             dwell_dur = intent_info.get("dwell_duration", 0.0)
-            dwell_thresh = intent_info.get("dwell_threshold", 1.8)
+            dwell_thresh = intent_info.get("dwell_threshold", 1.2)
             progress = intent_info.get("progress", 0.0)
             banner = intent_info.get("active_action_banner")
 
@@ -131,8 +130,8 @@ class UIOverlay:
         cv2.line(frame, (20, y_offset - 6), (350, y_offset - 6), (60, 60, 60), 1)
         cv2.putText(frame, "Press 'd' : Toggle Demo / Live Mode", (20, y_offset + 12),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.40, (255, 200, 100), 1, cv2.LINE_AA)
-        cv2.putText(frame, "Press 'l' : Toggle Telemetry Logging", (20, y_offset + 28),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.40, (100, 255, 150), 1, cv2.LINE_AA)
+        cv2.putText(frame, "Press 't' : Toggle Always-on-Top (PiP)", (20, y_offset + 28),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.40, (0, 220, 255), 1, cv2.LINE_AA)
         cv2.putText(frame, "Press 'c' : Calibrate", (20, y_offset + 44),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.40, (200, 200, 200), 1, cv2.LINE_AA)
         cv2.putText(frame, "Press 'r' : Reset Calib", (20, y_offset + 60),
@@ -173,7 +172,7 @@ class UIOverlay:
         cv2.putText(frame, prompt_text, (px - 110, py + 45),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 2, cv2.LINE_AA)
 
-    def draw_calibrated_gaze(self, frame, calib_gaze, zone_frac=0.15, intent_info=None, demo_mode=True):
+    def draw_calibrated_gaze(self, frame, calib_gaze, zone_frac=0.22, intent_info=None, demo_mode=True):
         """
         Draws trigger zones on left/right edges with dwell progress and calibrated gaze pointer.
         """

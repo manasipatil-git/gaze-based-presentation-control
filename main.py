@@ -11,6 +11,7 @@
 #
 # Controls:
 #   'd' - Toggle DEMO_MODE (Simulation vs Live Keyboard dispatch)
+#   't' - Toggle Always-On-Top (Picture-in-Picture over PowerPoint)
 #   'l' - Toggle Telemetry Data Logging (Record / Pause)
 #   'c' - Start / Re-run 5-point calibration
 #   'r' - Reset calibration & dwell state
@@ -58,6 +59,7 @@ def main():
     print(f"  Initial Control Mode: {'DEMO MODE (Simulation)' if DEMO_MODE else 'LIVE MODE (Keypresses Active)'}")
     print("  Controls:")
     print("    'd' - Toggle DEMO / LIVE presentation mode")
+    print("    't' - Toggle Always-On-Top (Float over PowerPoint)")
     print("    'l' - Toggle Telemetry Logging to CSV")
     print("    'c' - Run 5-point calibration")
     print("    'r' - Reset calibration")
@@ -74,6 +76,7 @@ def main():
     logger         = DataLogger(auto_start=True)
     ui             = UIOverlay()
 
+    is_topmost = False
     prev_time = time.time()
 
     # ── Main loop ─────────────────────────────────────────────────────────────
@@ -175,7 +178,8 @@ def main():
             intent_info=intent_info,
             demo_mode=controller.demo_mode,
             is_logging=logger.is_logging,
-            log_count=logger.frame_count
+            log_count=logger.frame_count,
+            is_topmost=is_topmost
         )
 
         # ── Show window ───────────────────────────────────────────────────────
@@ -188,6 +192,12 @@ def main():
         elif key == ord('d') or key == ord('D'):
             # Toggle between DEMO (safe simulation) and LIVE (real keypresses)
             controller.toggle_demo_mode()
+        elif key == ord('t') or key == ord('T'):
+            # Toggle Always-On-Top floating window (PiP mode over PowerPoint)
+            is_topmost = not is_topmost
+            cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_TOPMOST, 1 if is_topmost else 0)
+            status_str = "ENABLED (Floating PiP)" if is_topmost else "DISABLED (Normal)"
+            print(f"[FocusLock UI] Always-On-Top window: {status_str}")
         elif key == ord('l') or key == ord('L'):
             # Toggle Telemetry Logging
             logger.toggle_logging()
