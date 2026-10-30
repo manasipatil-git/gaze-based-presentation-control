@@ -7,9 +7,12 @@
 #   It includes:
 #     - 468 face mesh landmarks (eyelids, lips, face oval, tessellation)
 #     - 10 IRIS landmarks:
-#         Index 468: Right iris center (anatomical)
-#         Index 473: Left iris center (anatomical)
-#         Indices 469-472 & 474-477: Iris outer perimeter points
+#         Index 473: Anatomical Left Iris Center  (surrounded by 474-477)
+#         Index 468: Anatomical Right Iris Center (surrounded by 469-472)
+#
+#   CORRECT ANATOMICAL PAIRING:
+#     - Left Eye Contour (indices 362...263) <---> Left Iris Center (473)
+#     - Right Eye Contour (indices 33...133) <---> Right Iris Center (468)
 #
 #   Each landmark provides normalized coordinates (x, y in [0.0, 1.0])
 #   relative to image dimensions, and z (depth estimate).
@@ -30,9 +33,9 @@ from config import (
 )
 
 # ── MediaPipe landmark index constants ────────────────────────────────────────
-# 468 and 473 are the central iris landmarks in MediaPipe's 478-point mesh
-LEFT_IRIS_CENTER  = 468
-RIGHT_IRIS_CENTER = 473
+# Correct anatomical pairing:
+LEFT_IRIS_CENTER  = 473   # Left iris pupil center (surrounded by 474, 475, 476, 477)
+RIGHT_IRIS_CENTER = 468   # Right iris pupil center (surrounded by 469, 470, 471, 472)
 
 # Eye contour indices used for bounding box and normalization
 LEFT_EYE_INDICES  = [362, 382, 381, 380, 374, 373, 390, 249,

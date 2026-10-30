@@ -112,7 +112,7 @@ def main():
         action       = None
         zone         = None
 
-        if calibrator.is_calibrated and not calibrator.is_calibrating:
+        if not calibrator.is_calibrating:
             # Map smoothed iris gaze -> Screen Space [0.0, 1.0]
             calib_gaze = calibrator.map_to_screen(filtered_gaze)
 
@@ -143,7 +143,7 @@ def main():
 
         if calib_status.get("is_calibrating"):
             ui.draw_calibration_target(frame, calib_status)
-        elif calibrator.is_calibrated:
+        elif calib_gaze is not None:
             # Render calibrated gaze pointer, trigger zones, dwell feedback & banner
             ui.draw_calibrated_gaze(
                 frame, calib_gaze,
