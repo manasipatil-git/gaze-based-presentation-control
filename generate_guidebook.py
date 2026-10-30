@@ -1,6 +1,7 @@
 # generate_guidebook.py
 # ─────────────────────────────────────────────────────────────────────────────
 # Generates a clean, professional PDF guidebook for the FocusLock project.
+# Covers all 6 engineering stages in full detail.
 # ─────────────────────────────────────────────────────────────────────────────
 
 import os
@@ -88,11 +89,11 @@ def build_pdf(filename="FocusLock_Guidebook.pdf"):
         'Heading1_Custom',
         parent=styles['Heading1'],
         fontName='Helvetica-Bold',
-        fontSize=15,
-        leading=18,
+        fontSize=14,
+        leading=17,
         textColor=colors.HexColor("#0A2540"),
         spaceBefore=14,
-        spaceAfter=6,
+        spaceAfter=5,
         keepWithNext=True
     )
 
@@ -100,11 +101,11 @@ def build_pdf(filename="FocusLock_Guidebook.pdf"):
         'Heading2_Custom',
         parent=styles['Heading2'],
         fontName='Helvetica-Bold',
-        fontSize=12,
-        leading=15,
+        fontSize=11,
+        leading=14,
         textColor=colors.HexColor("#2B6CB0"),
-        spaceBefore=10,
-        spaceAfter=4,
+        spaceBefore=9,
+        spaceAfter=3,
         keepWithNext=True
     )
 
@@ -112,60 +113,45 @@ def build_pdf(filename="FocusLock_Guidebook.pdf"):
         'Body_Custom',
         parent=styles['BodyText'],
         fontName='Helvetica',
-        fontSize=9.5,
-        leading=13.5,
+        fontSize=9.2,
+        leading=13,
         textColor=colors.HexColor("#2D3748"),
-        spaceAfter=6
+        spaceAfter=5
     )
 
     bullet_style = ParagraphStyle(
         'Bullet_Custom',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=9.5,
-        leading=13.5,
+        fontSize=9.0,
+        leading=12.5,
         textColor=colors.HexColor("#2D3748"),
-        leftIndent=15,
-        firstLineIndent=-10,
-        spaceAfter=4
-    )
-
-    code_style = ParagraphStyle(
-        'Code_Custom',
-        parent=styles['Code'],
-        fontName='Courier',
-        fontSize=8.5,
-        leading=11.5,
-        textColor=colors.HexColor("#1A202C"),
-        backColor=colors.HexColor("#EDF2F7"),
-        borderColor=colors.HexColor("#CBD5E0"),
-        borderWidth=0.5,
-        borderPadding=5,
-        spaceBefore=4,
-        spaceAfter=6
+        leftIndent=14,
+        firstLineIndent=-9,
+        spaceAfter=3
     )
 
     callout_style = ParagraphStyle(
         'Callout',
         parent=styles['Normal'],
         fontName='Helvetica-Oblique',
-        fontSize=9.5,
-        leading=13.5,
+        fontSize=9.0,
+        leading=12.5,
         textColor=colors.HexColor("#1A365D"),
         backColor=colors.HexColor("#EBF8FF"),
         borderColor=colors.HexColor("#BEE3F8"),
         borderWidth=1,
         borderPadding=6,
-        spaceBefore=6,
-        spaceAfter=8
+        spaceBefore=5,
+        spaceAfter=7
     )
 
     story = []
 
     # ── Header / Title ────────────────────────────────────────────────────────
     story.append(Paragraph("FocusLock: Engineering Guidebook", title_style))
-    story.append(Paragraph("Webcam-Based Gaze Control System — Step-by-Step Architecture & Theory", subtitle_style))
-    story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#2B6CB0"), spaceAfter=12))
+    story.append(Paragraph("Webcam-Based Gaze Control System — Complete 6-Stage Architecture & Viva Reference", subtitle_style))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#2B6CB0"), spaceAfter=10))
 
     # ── Executive Summary ─────────────────────────────────────────────────────
     story.append(Paragraph("1. Executive Overview & Core Philosophy", h1_style))
@@ -178,7 +164,7 @@ def build_pdf(filename="FocusLock_Guidebook.pdf"):
     story.append(Paragraph(
         "<b>Crucial College Demo Concept:</b> MediaPipe is <i>only the sensor</i>. The true novelty and engineering value of this project "
         "lies in the downstream stages: <b>Coordinate Normalization</b>, <b>Temporal Filtering (Jitter Reduction)</b>, "
-        "<b>5-Point Linear Calibration Mapping</b>, and <b>Dwell-Based Intent Detection</b>.",
+        "<b>5-Point Linear Calibration Mapping</b>, <b>Dwell-Based Intent Detection</b>, <b>OS Actuation Integration</b>, and <b>Empirical Telemetry Benchmarking</b>.",
         callout_style
     ))
 
@@ -192,121 +178,58 @@ def build_pdf(filename="FocusLock_Guidebook.pdf"):
         ["3. Filtering", "moving_average.py", "Eliminate sensor noise & micro-saccades", "Sliding Window FIFO Mean (N=7)"],
         ["4. Calibration", "calibrator.py", "Map normalized gaze to screen coordinates", "1D Linear Least Squares (numpy.polyfit)"],
         ["5. Intent", "dwell_detector.py", "Prevent unintended clicks (Midas Touch)", "Continuous Zone Dwell Timer (1.8s)"],
-        ["6. Actuation", "presentation_controller.py", "Simulate presentation keypresses", "PyAutoGUI Left/Right Arrow Dispatch"]
+        ["6. Actuation", "presentation_controller.py", "Simulate presentation keypresses", "PyAutoGUI Left/Right Arrow Dispatch"],
+        ["7. Telemetry", "logger.py / plot_benchmarks.py", "Frame logging & scientific graphing", "Pandas CSV logging & Matplotlib plots"]
     ]
     
-    t_pipe = Table(pipeline_data, colWidths=[1.1*inch, 1.4*inch, 2.7*inch, 2.3*inch])
+    t_pipe = Table(pipeline_data, colWidths=[1.0*inch, 1.4*inch, 2.6*inch, 2.5*inch])
     t_pipe.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#2B6CB0")),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 8.5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('FONTSIZE', (0, 0), (-1, -1), 8.0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E0")),
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor("#F7FAFC")]),
     ]))
     story.append(t_pipe)
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 8))
 
     # ── Stage 1 Breakdown ─────────────────────────────────────────────────────
     story.append(Paragraph("3. Stage 1: Sensing & Iris Extraction", h1_style))
-    story.append(Paragraph(
-        "<b>Objective:</b> Capture live webcam video and locate anatomical facial features without training custom neural networks.",
-        body_style
-    ))
-    story.append(Paragraph("<b>Detailed Technical Decisions:</b>", h2_style))
-    story.append(Paragraph("• <b>Modern MediaPipe Tasks API:</b> Uses <code>FaceLandmarker</code> with <code>face_landmarker.task</code> model (~30MB), providing 478 3-D landmarks.", bullet_style))
+    story.append(Paragraph("• <b>Modern MediaPipe Tasks API:</b> Uses <code>FaceLandmarker</code> with standalone <code>face_landmarker.task</code> model bundle (~30MB), providing 478 3-D landmarks.", bullet_style))
     story.append(Paragraph("• <b>Iris Center Indices:</b> Landmark <b>468</b> represents the right iris center and landmark <b>473</b> represents the left iris center (in anatomical orientation).", bullet_style))
-    story.append(Paragraph("• <b>BGR to RGB Conversion:</b> OpenCV decodes camera streams into BGR format, whereas MediaPipe models are trained on RGB tensors. <code>cv2.cvtColor()</code> is strictly mandatory.", bullet_style))
-    story.append(Paragraph("• <b>Mirror Flipping:</b> We apply <code>cv2.flip(frame, 1)</code> so that moving your head to the right mirrors user intuition in the GUI.", bullet_style))
+    story.append(Paragraph("• <b>BGR to RGB:</b> OpenCV decodes in BGR; MediaPipe requires RGB (<code>cv2.cvtColor</code> is mandatory).", bullet_style))
 
     # ── Stage 2 Breakdown ─────────────────────────────────────────────────────
     story.append(Paragraph("4. Stage 2: Gaze Normalization & Signal Smoothing", h1_style))
-    story.append(Paragraph(
-        "<b>Objective:</b> Transform raw pixel coordinates into a scale-invariant ratio within the eye region, and eliminate high-frequency tremor.",
-        body_style
-    ))
-    story.append(Paragraph("<b>The Mathematical Formulation:</b>", h2_style))
-    story.append(Paragraph(
-        "1. <b>Eye Bounding Box Extraction:</b> We determine the minimum and maximum pixel boundaries of the eyelids:<br/>"
-        "&nbsp;&nbsp;&nbsp;&nbsp;<code>W_eye = X_max - X_min</code>,&nbsp;&nbsp;<code>H_eye = Y_max - Y_min</code>",
-        body_style
-    ))
-    story.append(Paragraph(
-        "2. <b>Normalization Formula:</b><br/>"
-        "&nbsp;&nbsp;&nbsp;&nbsp;<code>Gaze_X = (Iris_X - X_min) / W_eye</code><br/>"
-        "&nbsp;&nbsp;&nbsp;&nbsp;<code>Gaze_Y = (Iris_Y - Y_min) / H_eye</code><br/>"
-        "This maps the iris to a dimensionless coordinate in <code>[0.0, 1.0]</code>. When your head shifts relative to the camera, both the eye bounding box and the iris shift concurrently, making the ratio partially head-pose invariant.",
-        body_style
-    ))
-    story.append(Paragraph(
-        "3. <b>Dual-Eye Fusion:</b> Gaze coordinates are estimated for both the left and right eyes independently and averaged: <code>Gaze = (Gaze_Left + Gaze_Right) / 2.0</code>. This halves single-eye landmark variance.",
-        body_style
-    ))
-    story.append(Paragraph("<b>Noise & The Moving-Average Filter:</b>", h2_style))
-    story.append(Paragraph(
-        "Webcam gaze data suffers from <i>high-frequency jitter</i> due to optical sensor noise, lighting variations, and involuntary biological eye movements (microsaccades).<br/>"
-        "We implement a sliding window filter using <code>collections.deque(maxlen=7)</code>:<br/>"
-        "&nbsp;&nbsp;&nbsp;&nbsp;<code>Filtered_Gaze(t) = (1 / N) * SUM(Raw_Gaze(t - i)) for i in [0..N-1]</code>",
-        body_style
-    ))
-    story.append(Paragraph(
-        "<b>Engineering Trade-off:</b> A larger window (e.g. N=15) yields zero jitter but introduces significant perceptual latency (sluggish response). N=7 provides an optimal compromise for 30 FPS webcam streams (~230ms lag).",
-        callout_style
-    ))
+    story.append(Paragraph("• <b>Spatial Normalization:</b> <code>Gaze_X = (Iris_X - X_min) / (X_max - X_min)</code> maps iris inside [0.0, 1.0]. Because both the eyelid bbox and iris shift during head movement, the ratio remains partially head-pose invariant.", bullet_style))
+    story.append(Paragraph("• <b>Dual-Eye Fusion:</b> Averages left and right eye vectors to mitigate unilateral eyelid occlusion.", bullet_style))
+    story.append(Paragraph("• <b>Moving Average Filter:</b> FIFO sliding-window (N=7 frames) cancels high-frequency sensor noise and microsaccadic tremor with ~230ms perceptual latency.", bullet_style))
 
     # ── Stage 3 Breakdown ─────────────────────────────────────────────────────
     story.append(Paragraph("5. Stage 3: 5-Point Calibration & Screen Mapping", h1_style))
-    story.append(Paragraph(
-        "<b>Objective:</b> Convert physiological eye socket coordinates [0.0, 1.0] into actual user screen coordinates.",
-        body_style
-    ))
-    story.append(Paragraph("<b>Why Calibration is Mathematically Obligatory:</b>", h2_style))
-    story.append(Paragraph(
-        "When looking at the far corners of a laptop screen, the physical human iris only traverses a small subset of the eye socket (typically between 0.35 and 0.65). Without calibration, the user could never reach the screen boundaries. "
-        "Calibration computes the exact <b>Gain (Amplification)</b> and <b>Offset (Center Bias)</b> for that user's posture and camera angle.",
-        body_style
-    ))
-    story.append(Paragraph("<b>The 5 Calibration Target Coordinates:</b>", h2_style))
-    
-    calib_table_data = [
-        ["Target Name", "Target Screen Pos (X, Y)", "User Action"],
-        ["1. Top-Left", "(0.15, 0.15)", "User fixes gaze on top-left bullseye for 30 frames"],
-        ["2. Top-Right", "(0.85, 0.15)", "User fixes gaze on top-right bullseye for 30 frames"],
-        ["3. Center", "(0.50, 0.50)", "User fixes gaze on center bullseye for 30 frames"],
-        ["4. Bottom-Left", "(0.15, 0.85)", "User fixes gaze on bottom-left bullseye for 30 frames"],
-        ["5. Bottom-Right", "(0.85, 0.85)", "User fixes gaze on bottom-right bullseye for 30 frames"]
-    ]
-    t_calib = Table(calib_table_data, colWidths=[1.5*inch, 2.0*inch, 3.8*inch])
-    t_calib.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#2B6CB0")),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 8.5),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E0")),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor("#F7FAFC")]),
-    ]))
-    story.append(t_calib)
-    story.append(Spacer(1, 8))
+    story.append(Paragraph("• <b>Why Required:</b> Physiological iris rotation only spans a narrow band (0.35 to 0.65) in normalized space. Calibration calculates user-specific Gain ($m$) and Offset ($c$).", bullet_style))
+    story.append(Paragraph("• <b>Linear Regression:</b> <code>X_screen = m_x * Gaze_X + c_x</code> via <code>numpy.polyfit</code> across 5 target targets, saved in <code>calibration.json</code>.", bullet_style))
 
-    story.append(Paragraph("<b>Linear Least-Squares Regression (numpy.polyfit):</b>", h2_style))
-    story.append(Paragraph(
-        "We fit 1st-degree polynomial equations relating raw eye coordinates to target screen coordinates:<br/>"
-        "&nbsp;&nbsp;&nbsp;&nbsp;<code>Screen_X = m_x * Gaze_X + c_x</code><br/>"
-        "&nbsp;&nbsp;&nbsp;&nbsp;<code>Screen_Y = m_y * Gaze_Y + c_y</code><br/>"
-        "Parameters are saved persistently to <code>calibration.json</code> so calibration persists across application restarts.",
-        body_style
-    ))
+    # ── Stage 4 Breakdown ─────────────────────────────────────────────────────
+    story.append(Paragraph("6. Stage 4: Dwell-Based Intent Detection", h1_style))
+    story.append(Paragraph("• <b>The Midas Touch Problem:</b> Human eyes are perceptual organs. Looking at the screen edge must not fire instant commands. We enforce a continuous 1.8s dwell threshold.", bullet_style))
+    story.append(Paragraph("• <b>Single-Shot Trigger Protection:</b> Once 1.8s elapses, the action fires exactly once and locks further triggers until the user looks away from the zone.", bullet_style))
 
-    # ── Stage 4-6 Roadmap ─────────────────────────────────────────────────────
-    story.append(Paragraph("6. Remaining Pipeline Roadmap (Stages 4, 5, 6)", h1_style))
-    story.append(Paragraph("• <b>Stage 4 (Dwell Intent Detection):</b> Implements a continuous timer (1.8s) when calibrated gaze resides inside the left (0–15%) or right (85–100%) trigger zones to solve the <i>Midas Touch</i> problem.", bullet_style))
-    story.append(Paragraph("• <b>Stage 5 (Presentation Control):</b> Connects PyAutoGUI to emit actual <code>LEFT</code> / <code>RIGHT</code> keyboard events, guarded by a safe <code>DEMO_MODE</code> flag.", bullet_style))
-    story.append(Paragraph("• <b>Stage 6 (Logging & Evaluation):</b> Exports real frame-by-frame gaze coordinates to CSV (<code>data/logs/gaze_log.csv</code>) for quantitative error and latency plots.", bullet_style))
+    # ── Stage 5 Breakdown ─────────────────────────────────────────────────────
+    story.append(Paragraph("7. Stage 5: Presentation Control & DEMO_MODE Safety", h1_style))
+    story.append(Paragraph("• <b>PyAutoGUI Actuation:</b> Maps <code>NEXT_SLIDE</code> $\to$ Right Arrow, and <code>PREV_SLIDE</code> $\to$ Left Arrow.", bullet_style))
+    story.append(Paragraph("• <b>DEMO_MODE Safety Toggle ('d' key):</b> Allows testing without sending active keystrokes to other open computer windows.", bullet_style))
+
+    # ── Stage 6 Breakdown ─────────────────────────────────────────────────────
+    story.append(Paragraph("8. Stage 6: Telemetry Logging & Benchmark Graphing", h1_style))
+    story.append(Paragraph("• <b>Frame Logging:</b> Writes timestamp, raw, filtered, calibrated coords, zone, and actions to <code>data/logs/gaze_log.csv</code>.", bullet_style))
+    story.append(Paragraph("• <b>Matplotlib Benchmark:</b> <code>plot_benchmarks.py</code> generates 3-panel scientific figures (Raw vs. Filtered jitter reduction, Calibrated timeline with action markers, and 2D spatial trajectory).", bullet_style))
 
     # ── Viva Q&A Cheatsheet ───────────────────────────────────────────────────
-    story.append(Paragraph("7. Viva & Demonstration Q&A Cheatsheet", h1_style))
+    story.append(Paragraph("9. Viva & Demonstration Q&A Cheatsheet", h1_style))
     
     qa_data = [
         [
@@ -327,7 +250,7 @@ def build_pdf(filename="FocusLock_Guidebook.pdf"):
         ]
     ]
 
-    t_qa = Table(qa_data, colWidths=[2.5*inch, 4.8*inch])
+    t_qa = Table(qa_data, colWidths=[2.3*inch, 4.8*inch])
     t_qa.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#1A365D")),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
@@ -335,14 +258,14 @@ def build_pdf(filename="FocusLock_Guidebook.pdf"):
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E0")),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor("#F7FAFC")]),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
     ]))
     story.append(t_qa)
 
     # Build document
     doc.build(story, canvasmaker=NumberedCanvas)
-    print(f"[FocusLock] Guidebook PDF successfully built: {filename}")
+    print(f"[FocusLock] Complete Guidebook PDF successfully built: {filename}")
 
 
 if __name__ == "__main__":

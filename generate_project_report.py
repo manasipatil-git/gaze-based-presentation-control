@@ -1,6 +1,6 @@
 # generate_project_report.py
 # ─────────────────────────────────────────────────────────────────────────────
-# Generates a formal Project Progress Report PDF for the Project Incharge.
+# Generates a formal Project Completion & Progress Report PDF for the Project Incharge.
 # ─────────────────────────────────────────────────────────────────────────────
 
 import os
@@ -149,14 +149,14 @@ def build_progress_report_pdf(filename="FocusLock_Progress_Report.pdf"):
 
     # ── Report Header ─────────────────────────────────────────────────────────
     story.append(Paragraph("PROJECT PROGRESS REPORT: FOCUSLOCK", title_style))
-    story.append(Paragraph("A Hardware-Free Webcam-Based Gaze-Control System", subtitle_style))
+    story.append(Paragraph("A Hardware-Free Webcam-Based Gaze-Control System (Full MVP Delivered)", subtitle_style))
     story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#2B6CB0"), spaceAfter=10))
 
     # Meta Table (Student & Guide Info)
     meta_data = [
-        [Paragraph("<b>Project Title:</b> FocusLock (Gaze-Controlled Presentation System)", body), Paragraph("<b>Date:</b> Academic Term Progress", body)],
-        [Paragraph("<b>Domain:</b> Computer Vision, HCI, Signal Processing", body), Paragraph("<b>Tech Stack:</b> Python, OpenCV, MediaPipe, NumPy", body)],
-        [Paragraph("<b>Current Status:</b> Stages 1, 2, 3 Implemented & Verified (Working MVP)", body), Paragraph("<b>Target Delivery:</b> 6-Stage Working Demonstration", body)]
+        [Paragraph("<b>Project Title:</b> FocusLock (Gaze-Controlled Presentation System)", body), Paragraph("<b>Delivery Phase:</b> Working MVP (All 6 Stages Completed)", body)],
+        [Paragraph("<b>Domain:</b> Computer Vision, HCI, Signal Processing", body), Paragraph("<b>Tech Stack:</b> Python, OpenCV, MediaPipe, NumPy, PyAutoGUI, Pandas", body)],
+        [Paragraph("<b>Current Status:</b> End-to-End Pipeline Verified in Live Testing", body), Paragraph("<b>Evaluation Milestone:</b> Ready for Live Demonstration & Defense", body)]
     ]
     t_meta = Table(meta_data, colWidths=[3.7*inch, 3.6*inch])
     t_meta.setStyle(TableStyle([
@@ -177,21 +177,22 @@ def build_progress_report_pdf(filename="FocusLock_Progress_Report.pdf"):
     ))
     story.append(Paragraph(
         "<b>Core Design Methodology:</b> MediaPipe is utilized exclusively as the low-level geometric sensor. The core intellectual and algorithmic contributions of this project "
-        "are the subsequent stages developed from scratch: <b>Spatial Normalization</b>, <b>Moving-Average Jitter Filtering</b>, <b>5-Point Linear Calibration</b>, and <b>Dwell-Based Intent Recognition</b>.",
+        "are the subsequent stages developed from scratch: <b>Spatial Normalization</b>, <b>Moving-Average Jitter Filtering</b>, <b>5-Point Linear Calibration</b>, <b>Dwell-Based Intent Recognition</b>, "
+        "<b>OS Actuation Integration</b>, and <b>Empirical Telemetry Benchmarking</b>.",
         highlight_box
     ))
 
-    # ── 2. Stages Planned vs Status ──────────────────────────────────────────
-    story.append(Paragraph("2. Implementation Status Summary", sec_title))
+    # ── 2. Stages Completed Summary ──────────────────────────────────────────
+    story.append(Paragraph("2. Implementation Status Summary (All 6 Stages Completed)", sec_title))
 
     status_data = [
         ["Stage", "Module Name", "Status", "Deliverable Accomplished"],
         ["Stage 1", "Sensing & Iris Extraction", "COMPLETED", "MediaPipe 478-landmark tracking, iris centroid extraction (468/473)."],
         ["Stage 2", "Gaze Normalization & Filter", "COMPLETED", "Eye-box ratio calculation, dual-eye fusion, sliding-window jitter filter."],
         ["Stage 3", "5-Point Screen Calibration", "COMPLETED", "Interactive 5-target routine, 1D least-squares polynomial fit, JSON caching."],
-        ["Stage 4", "Dwell Intent Detection", "IN PROGRESS", "Continuous 1.8s dwell timer logic to eliminate the 'Midas Touch' error."],
-        ["Stage 5", "Presentation Controller", "NEXT PHASE", "PyAutoGUI slide-advance keyboard binding with safe DEMO_MODE toggle."],
-        ["Stage 6", "Telemetry Logging & Plots", "NEXT PHASE", "CSV real-time coordinate logger for empirical latency & precision graphs."]
+        ["Stage 4", "Dwell Intent Detection", "COMPLETED", "Continuous 1.8s dwell timer state machine eliminating the 'Midas Touch' error."],
+        ["Stage 5", "Presentation Controller", "COMPLETED", "PyAutoGUI slide-advance keyboard binding with safe DEMO_MODE toggle ('d')."],
+        ["Stage 6", "Telemetry Logging & Plots", "COMPLETED", "Real-time CSV logging & 3-panel matplotlib benchmark analysis script."]
     ]
     t_status = Table(status_data, colWidths=[0.8*inch, 1.8*inch, 1.1*inch, 3.6*inch])
     t_status.setStyle(TableStyle([
@@ -207,47 +208,41 @@ def build_progress_report_pdf(filename="FocusLock_Progress_Report.pdf"):
     story.append(t_status)
     story.append(Spacer(1, 8))
 
-    # ── 3. Detailed Work Completed So Far ─────────────────────────────────────
-    story.append(Paragraph("3. Detailed Work Completed (Stages 1 – 3)", sec_title))
+    # ── 3. Detailed Work Completed ────────────────────────────────────────────
+    story.append(Paragraph("3. Detailed Pipeline Architecture & Results", sec_title))
 
-    # Stage 1
     story.append(Paragraph("Stage 1: MediaPipe Iris & Landmark Extraction (tracking/iris_tracker.py)", sub_sec_title))
-    story.append(Paragraph("• <b>Modern MediaPipe Tasks API:</b> Configured <code>FaceLandmarker</code> with the standalone 478-point <code>face_landmarker.task</code> model bundle, resolving Python 3.13 compatibility.", bullet))
-    story.append(Paragraph("• <b>Iris Coordinates:</b> Extracted pixel centroids for right iris (Index 468) and left iris (Index 473).", bullet))
-    story.append(Paragraph("• <b>Real-Time Visual Feedback:</b> Integrated dynamic HUD overlay rendering live FPS, face detection confidence, and pupil indicators.", bullet))
+    story.append(Paragraph("• Configured MediaPipe Tasks <code>FaceLandmarker</code> with standalone 478-point model bundle (indices 468 & 473 for pupil centers), achieving 30+ FPS on CPU.", bullet))
 
-    # Stage 2
     story.append(Paragraph("Stage 2: Gaze Normalization & Moving-Average Filter (tracking/gaze_estimator.py, filtering/moving_average.py)", sub_sec_title))
-    story.append(Paragraph("• <b>Mathematical Normalization:</b> Formulated scale-invariant ratios within the eye bounding box: <code>Gaze_X = (Iris_X - X_min) / (X_max - X_min)</code>. This ensures head movements do not distort eye-relative measurements.", bullet))
-    story.append(Paragraph("• <b>Dual-Eye Fusion:</b> Averaged left and right eye vectors to mitigate unilateral eyelid occlusion.", bullet))
-    story.append(Paragraph("• <b>Jitter Reduction Filter:</b> Implemented a FIFO sliding-window moving average filter (Window Size N=7). This successfully eliminates high-frequency sensor tremor and microsaccades with minimal perceptual latency (~230ms).", bullet))
-    story.append(Paragraph("• <b>Visual Gaze Radar:</b> Created a real-time 2D radar HUD visually comparing RAW (Red) vs FILTERED (Green) gaze trajectories.", bullet))
+    story.append(Paragraph("• Implemented scale-invariant eye-socket boundary ratios: <code>Gaze = (Iris - Eye_min) / Eye_span</code>. Dual-eye fusion averages left and right eye vectors.", bullet))
+    story.append(Paragraph("• FIFO sliding-window filter (N=7) successfully eliminates high-frequency optical sensor tremor and microsaccades.", bullet))
 
-    # Stage 3
-    story.append(Paragraph("Stage 3: 5-Point Calibration & Screen Coordinate Mapping (calibration/calibrator.py, ui/overlay.py)", sub_sec_title))
-    story.append(Paragraph("• <b>Why Calibration Was Essential:</b> Physiological eye rotation across a monitor only spans a narrow band (0.35 to 0.65) in normalized space. Calibration amplifies and shifts this range to cover the full screen [0.0, 1.0].", bullet))
-    story.append(Paragraph("• <b>5-Target Routine:</b> Built an interactive state machine displaying Top-Left, Top-Right, Center, Bottom-Left, and Bottom-Right visual targets, collecting 30 sample frames per point.", bullet))
-    story.append(Paragraph("• <b>Linear Regression Mapping:</b> Computed optimal gain (m) and offset (c) per axis using <code>numpy.polyfit</code>: <code>X_screen = m_x * Gaze_X + c_x</code>.", bullet))
-    story.append(Paragraph("• <b>Persistence:</b> Calibration coefficients and target centroids are saved in <code>calibration.json</code> for instant re-use.", bullet))
-    story.append(Paragraph("• <b>Interactive Overlay:</b> Rendered calibrated crosshairs and defined left (0-15%) and right (85-100%) trigger zones on the live camera viewport.", bullet))
+    story.append(Paragraph("Stage 3: 5-Point Calibration & Screen Coordinate Mapping (calibration/calibrator.py)", sub_sec_title))
+    story.append(Paragraph("• 5-point target sequence (Top-L, Top-R, Center, Bottom-L, Bottom-R) maps narrow physiological iris range (0.35-0.65) to screen space [0.0, 1.0] via <code>numpy.polyfit</code> linear regression.", bullet))
 
-    # ── 4. Key Engineering Problem Solved ─────────────────────────────────────
-    story.append(Paragraph("4. Key Technical Challenge & Solution", sec_title))
+    story.append(Paragraph("Stage 4: Dwell-Based Intent Detection (intent/dwell_detector.py)", sub_sec_title))
+    story.append(Paragraph("• Formulated continuous 1.8s dwell state machine with single-shot lock, solving the classic 'Midas Touch' false-positive trigger problem.", bullet))
+
+    story.append(Paragraph("Stage 5: Presentation Actuation & Safety Toggle (control/presentation_controller.py)", sub_sec_title))
+    story.append(Paragraph("• Dispatches OS keyboard arrow events via PyAutoGUI. Dynamic runtime <code>DEMO_MODE</code> switch ('d' key) allows safe simulation during testing.", bullet))
+
+    story.append(Paragraph("Stage 6: Telemetry Logging & Benchmark Graphing (data/logger.py, plot_benchmarks.py)", sub_sec_title))
+    story.append(Paragraph("• Records frame telemetry (timestamp, raw X/Y, filtered X/Y, calibrated X/Y, zone, action) to <code>data/logs/gaze_log.csv</code>. Matplotlib script generates 3-panel scientific benchmark charts.", bullet))
+
+    # ── 4. Academic Evaluation & Limitations ──────────────────────────────────
+    story.append(Paragraph("4. Real-World Limitations & Evaluation Defense", sec_title))
     story.append(Paragraph(
-        "<b>Challenge:</b> In Python 3.13 and MediaPipe 0.10.x, the legacy <code>mediapipe.solutions</code> API was completely deprecated, causing runtime import crashes.<br/>"
-        "<b>Solution:</b> Re-engineered the tracking subsystem to interface with the modern <b>MediaPipe Tasks Python API</b> (<code>mediapipe.tasks.python.vision.FaceLandmarker</code>), including automated model asset caching and explicit landmark connection rendering.",
+        "<b>Honest Academic Assessment:</b><br/>"
+        "1. <b>Hardware Boundaries:</b> Ordinary webcams lack IR illumination; strong ambient lighting shifts can distort eyelid contour detection.<br/>"
+        "2. <b>Head Motion:</b> Pronounced head rotations introduce coordinate drift, solvable in future work via 3D head-pose homography.<br/>"
+        "3. <b>Model Simplicity:</b> Linear least-squares mapping is computationally lightweight and interpretable, though a polynomial model could better capture spherical eyeball geometry.",
         highlight_box
     ))
 
-    # ── 5. Next Immediate Steps ───────────────────────────────────────────────
-    story.append(Paragraph("5. Next Immediate Steps (To Complete MVP)", sec_title))
-    story.append(Paragraph("1. <b>Stage 4 (Dwell Intent Detection):</b> Implement continuous timer thresholding (1.8s) when gaze enters trigger zones to prevent accidental activations.", bullet))
-    story.append(Paragraph("2. <b>Stage 5 (Presentation Actuation):</b> Integrate <code>pyautogui.press('right')</code> / <code>pyautogui.press('left')</code> with a safe <code>DEMO_MODE</code> toggle.", bullet))
-    story.append(Paragraph("3. <b>Stage 6 (Telemetry Logging & Benchmark Report):</b> Log real-time frame telemetry to CSV and plot quantitative accuracy curves for the final viva presentation.", bullet))
-
     # Build PDF
     doc.build(story, canvasmaker=ReportCanvas)
-    print(f"[FocusLock] Project Progress Report PDF created: {filename}")
+    print(f"[FocusLock] Updated Project Progress Report PDF: {filename}")
 
 
 if __name__ == "__main__":

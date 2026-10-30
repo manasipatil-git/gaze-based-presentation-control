@@ -2,44 +2,47 @@
 
 > **Hardware-free webcam-based gaze-controlled presentation system.**
 
-FocusLock is an educational computer-vision project that turns a standard laptop webcam into a hands-free gaze-driven controller for slide presentations.
+FocusLock is an educational computer-vision project that transforms a standard laptop webcam into a hands-free gaze-driven controller for slide presentations.
 
 ---
 
-## 📌 Architecture Overview
+## 📌 Architecture Pipeline
 
 ```
-Webcam (BGR)
-    │
-    ▼
-MediaPipe Tasks FaceLandmarker (Iris Centroids 468 & 473)
-    │
-    ▼
-Dual-Eye Gaze Normalization (Eye Bounding Box ratio)
-    │
-    ▼
-Temporal Jitter Reduction (Moving Average Filter, N=7)
-    │
-    ▼
-5-Point Screen Calibration (1D Linear Regression via numpy.polyfit)
-    │
-    ▼
-Dwell-Based Intent Detection (1.8s Threshold)
-    │
-    ▼
-Presentation Actuation (PyAutoGUI Left/Right Arrow Dispatch)
+[ Webcam BGR Frame ]
+         │
+         ▼
+[ Stage 1: Sensing Layer ]             ──► MediaPipe Tasks FaceLandmarker (Iris Centroids 468 & 473)
+         │
+         ▼
+[ Stage 2: Spatial Normalization ]     ──► Scale-invariant eye-socket ratio [0.0, 1.0]
+         │
+         ▼
+[ Stage 2: Temporal Filtering ]        ──► Moving-Average Filter (N=7 sliding window jitter reduction)
+         │
+         ▼
+[ Stage 3: Calibration Layer ]         ──► 5-Point linear least-squares regression (numpy.polyfit)
+         │
+         ▼
+[ Stage 4: Intent Detection ]          ──► Continuous 1.8s dwell timer with single-shot lock
+         │
+         ▼
+[ Stage 5: Physical Actuation ]        ──► PyAutoGUI keyboard controller (Left/Right arrows with DEMO_MODE)
+         │
+         ▼
+[ Stage 6: Telemetry & Evaluation ]    ──► Frame-by-frame CSV telemetry logging & benchmark graphing
 ```
 
 ---
 
-## 🚀 Current MVP Status
+## 🚀 MVP Implementation Status
 
-- [x] **Stage 1 — Sensing & Iris Extraction:** MediaPipe Tasks API integration with 478-landmark mesh & iris centroids.
+- [x] **Stage 1 — Sensing & Iris Extraction:** MediaPipe Tasks API with 478-landmark mesh & iris centroids.
 - [x] **Stage 2 — Gaze Normalization & Filtering:** Dual-eye socket relative ratio & sliding-window moving-average filter.
 - [x] **Stage 3 — 5-Point Calibration:** Interactive 5-target linear least-squares screen mapping (`calibration.json`).
-- [ ] **Stage 4 — Dwell Intent Detection:** Continuous gaze timer to prevent the *Midas Touch* problem.
-- [ ] **Stage 5 — Presentation Control:** PyAutoGUI keyboard binding with `DEMO_MODE` safety switch.
-- [ ] **Stage 6 — CSV Data Logging & Benchmark:** Telemetry export and accuracy plots.
+- [x] **Stage 4 — Dwell-Based Intent Detection:** 1.8s dwell state machine solving the *"Midas Touch"* problem.
+- [x] **Stage 5 — Presentation Control:** PyAutoGUI slide-advance keyboard binding with safe `DEMO_MODE` toggle.
+- [x] **Stage 6 — Telemetry Logging & Benchmarking:** Frame telemetry logger & 3-panel matplotlib analysis script.
 
 ---
 
@@ -56,43 +59,54 @@ Presentation Actuation (PyAutoGUI Left/Right Arrow Dispatch)
    pip install -r requirements.txt
    ```
 
-3. **Run the application:**
+3. **Run FocusLock:**
    ```bash
    python main.py
    ```
 
 ---
 
-## 🎮 Controls
+## 🎮 Live Keyboard Controls
 
-| Key | Action |
-|---|---|
-| **`c`** | Start / Re-run interactive 5-Point Calibration |
-| **`r`** | Reset calibration |
-| **`q`** or **`ESC`** | Quit application |
-
----
-
-## 📊 Calibration Procedure
-
-1. Launch `python main.py` and press **`c`**.
-2. Fix your gaze on the 5 target points as they appear:
-   - **Top-Left** $\to$ **Top-Right** $\to$ **Center** $\to$ **Bottom-Left** $\to$ **Bottom-Right**
-3. Once calibration completes, the calibrated gaze crosshair will track your point of regard on screen.
+| Key | Action | Description |
+|:---:|:---:|---|
+| **`d`** | **Toggle Demo / Live Mode** | Switches between safe simulation (printing only) and live OS keypresses. |
+| **`l`** | **Toggle Telemetry Logging** | Starts or pauses frame-by-frame telemetry recording to `data/logs/gaze_log.csv`. |
+| **`c`** | **Run 5-Point Calibration** | Starts the interactive calibration target sequence (Top-L $\to$ Top-R $\to$ Center $\to$ Bottom-L $\to$ Bottom-R). |
+| **`r`** | **Reset Calibration** | Clears active calibration and dwell states. |
+| **`q`** / **`ESC`** | **Quit & Save** | Safely flushes telemetry logs, releases camera, and exits. |
 
 ---
 
-## ⚠️ Current Limitations (Honest MVP Assessment)
+## 📊 Generating Scientific Benchmark Graphs
+
+After running FocusLock, analyze your real eye telemetry:
+
+```bash
+python plot_benchmarks.py
+```
+
+This generates a 3-panel figure saved at **`data/logs/gaze_benchmark.png`**:
+1. **Jitter Reduction:** Overlays raw sensor gaze vs. moving-average smoothed gaze over time.
+2. **Intent & Trigger Events:** Plots calibrated screen coordinates with Left/Right trigger zones and timestamps of slide commands.
+3. **2D Trajectory:** Plots raw 2D spatial scatter against the smoothed eye-path.
+
+*(No synthetic or fabricated benchmark numbers are used—only real empirical data from testing).*
+
+---
+
+## ⚠️ Current MVP Limitations (Honest Academic Assessment)
 
 - **Webcam-based gaze estimation is approximate:** Standard RGB webcams lack depth sensors and infrared illumination.
-- **Lighting variations:** Drastic shifts in ambient lighting alter eyelid boundary segmentation.
-- **Head movement:** Large head rotations can cause calibration drift (future versions will incorporate full 3D head-pose compensation).
-- **First-order linear mapping:** Approximates spherical eye rotations using planar 1D linear equations.
-- **Kalman filtering:** Moving-average filter is implemented; Kalman filter is reserved for next development iteration.
+- **Lighting sensitivity:** Drastic shifts in room lighting or backlighting alter eyelid boundary segmentation.
+- **Head rotation drift:** Severe head tilting alters the eye reference frame (future work will add full 3D head-pose compensation).
+- **First-order linear mapping:** Approximates spherical eye rotations using planar 1D linear regression.
+- **Kalman filtering:** The moving-average filter successfully removes high-frequency jitter; full state-space Kalman filtering is planned for the next development phase.
+- **Intent thresholding:** Dwell-based intent is effective for presentation navigation, but multi-user statistical validation remains future work.
 
 ---
 
-## 📄 Documentation & Reports
+## 📄 Complete Project Documentation
 
-- 📘 [`FocusLock_Guidebook.pdf`](FocusLock_Guidebook.pdf) — Complete technical reference and viva preparation guide.
-- 📋 [`FocusLock_Progress_Report.pdf`](FocusLock_Progress_Report.pdf) — Formal progress report for faculty advisors.
+- 📘 [`FocusLock_Guidebook.pdf`](FocusLock_Guidebook.pdf) — Complete engineering architecture, mathematical formulas, and viva defense guide.
+- 📋 [`FocusLock_Progress_Report.pdf`](FocusLock_Progress_Report.pdf) — Formal progress report prepared for faculty advisors.
