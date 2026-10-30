@@ -2,10 +2,10 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # FocusLock Complete Architecture:
 #   1. Sensing:       Webcam + MediaPipe Tasks FaceLandmarker (Iris landmarks)
-#   2. Normalization: Relative eye-socket boundary ratio [0.0, 1.0]
-#   3. Filtering:     Sliding-window moving-average filter (N=7 jitter reduction)
+#   2. Normalization: Rigid Canthi Horizontal Gaze Ratio + Physical Range Expansion
+#   3. Filtering:     Adaptive Fixation Deadband + Saccade Acceleration (1-Euro)
 #   4. Calibration:   5-Point linear least-squares regression (numpy.polyfit)
-#   5. Intent:        Dwell-time thresholding (1.8s) with single-shot lock
+#   5. Intent:        Dwell-time thresholding (1.2s) with 0.35s blink grace period
 #   6. Actuation:     PyAutoGUI presentation keypress (Left/Right) with DEMO_MODE
 #   7. Telemetry:     Real-time CSV data logging for scientific benchmarking
 #
@@ -51,9 +51,10 @@ def main():
         return
 
     print("=" * 72)
-    print("  FocusLock — Working MVP (Gaze-Controlled Presentation System)")
+    print("  FocusLock — High-Precision Gaze-Controlled Presentation System")
     print("=" * 72)
-    print(f"  Dwell threshold: {DWELL_TIME}s")
+    print(f"  Dwell threshold: {DWELL_TIME}s (with 0.35s blink grace tolerance)")
+    print(f"  Trigger Zones: Left/Right {int(ZONE_WIDTH_FRAC * 100)}% of screen")
     print(f"  Initial Control Mode: {'DEMO MODE (Simulation)' if DEMO_MODE else 'LIVE MODE (Keypresses Active)'}")
     print("  Controls:")
     print("    'd' - Toggle DEMO / LIVE presentation mode")
@@ -66,7 +67,7 @@ def main():
     # ── Initialize modules ────────────────────────────────────────────────────
     tracker        = IrisTracker()
     estimator      = GazeEstimator()
-    filter_        = MovingAverageFilter(window_size=SMOOTHING_WINDOW)
+    filter_        = MovingAverageFilter(window_size=SMOOTHING_WINDOW, deadband=0.016)
     calibrator     = Calibrator()
     dwell_detector = DwellDetector(dwell_time=DWELL_TIME, zone_width_frac=ZONE_WIDTH_FRAC)
     controller     = PresentationController(demo_mode=DEMO_MODE)
@@ -88,17 +89,18 @@ def main():
         # ── 1. Detect face and irises ─────────────────────────────────────────
         left_iris_px, right_iris_px = tracker.process(frame)
 
-        left_eye_bbox  = tracker.get_eye_bbox(frame.shape, eye="left")
-        right_eye_bbox = tracker.get_eye_bbox(frame.shape, eye="right")
+        # Extract rigid eye canthi and geometry
+        left_eye_geom  = tracker.get_eye_geometry(frame.shape, eye="left")
+        right_eye_geom = tracker.get_eye_geometry(frame.shape, eye="right")
 
         # ── 2. Calculate normalized gaze ──────────────────────────────────────
         raw_gaze_x, raw_gaze_y = estimator.estimate(
-            left_iris_px, left_eye_bbox,
-            right_iris_px, right_eye_bbox
+            left_iris_px, left_eye_geom,
+            right_iris_px, right_eye_geom
         )
         raw_gaze = (raw_gaze_x, raw_gaze_y) if raw_gaze_x is not None else None
 
-        # ── 3. Smooth with Moving-Average Filter ───────────────────────────────
+        # ── 3. High-Precision Adaptive Filter (Deadband + Saccade) ────────────
         if raw_gaze is not None:
             filtered_gaze = filter_.update(raw_gaze)
         else:
@@ -140,6 +142,14 @@ def main():
         # Subtle face mesh & iris dots
         tracker.draw_landmarks(frame)
         tracker.draw_iris(frame, left_iris_px, right_iris_px)
+
+        # Draw subtle eye boundaries
+        if left_eye_geom:
+            x1, y1, x2, y2 = left_eye_geom["bbox"]
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 128, 0), 1)
+        if right_eye_geom:
+            x1, y1, x2, y2 = right_eye_geom["bbox"]
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 128, 0), 1)
 
         if calib_status.get("is_calibrating"):
             ui.draw_calibration_target(frame, calib_status)

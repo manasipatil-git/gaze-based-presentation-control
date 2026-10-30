@@ -14,8 +14,11 @@
 #     - Left Eye Contour (indices 362...263) <---> Left Iris Center (473)
 #     - Right Eye Contour (indices 33...133) <---> Right Iris Center (468)
 #
-#   Each landmark provides normalized coordinates (x, y in [0.0, 1.0])
-#   relative to image dimensions, and z (depth estimate).
+#   RIGID CANTHI (Eye Corners):
+#     - Left Eye: 263 (lateral canthus), 362 (medial canthus)
+#     - Right Eye: 33 (lateral canthus), 133 (medial canthus)
+#     These rigid skull-anchored points do not fluctuate with eyelid blinks,
+#     providing maximum horizontal gaze stability.
 # ─────────────────────────────────────────────────────────────────────────────
 
 import os
@@ -33,9 +36,8 @@ from config import (
 )
 
 # ── MediaPipe landmark index constants ────────────────────────────────────────
-# Correct anatomical pairing:
-LEFT_IRIS_CENTER  = 473   # Left iris pupil center (surrounded by 474, 475, 476, 477)
-RIGHT_IRIS_CENTER = 468   # Right iris pupil center (surrounded by 469, 470, 471, 472)
+LEFT_IRIS_CENTER  = 473   # Left iris pupil center
+RIGHT_IRIS_CENTER = 468   # Right iris pupil center
 
 # Eye contour indices used for bounding box and normalization
 LEFT_EYE_INDICES  = [362, 382, 381, 380, 374, 373, 390, 249,
@@ -50,7 +52,7 @@ MODEL_URL  = "https://storage.googleapis.com/mediapipe-models/face_landmarker/fa
 class IrisTracker:
     """
     Wraps MediaPipe FaceLandmarker.
-    Call process(frame) each frame to get iris centres and eye bounding boxes.
+    Call process(frame) each frame to get iris centres and eye geometry.
     """
 
     def __init__(self):
@@ -120,12 +122,11 @@ class IrisTracker:
         """Convert a NormalizedLandmark to integer pixel (x, y)."""
         return (int(landmark.x * w), int(landmark.y * h))
 
-    # ── Eye bounding box ─────────────────────────────────────────────────────
+    # ── Eye bounding box & rigid canthi geometry ─────────────────────────────
 
     def get_eye_bbox(self, frame_shape, eye="left"):
         """
         Return (x_min, y_min, x_max, y_max) pixel bounding box of one eye.
-        Used for gaze normalisation within the eye region.
         """
         if not self.face_detected or self.landmarks is None:
             return None
@@ -138,12 +139,45 @@ class IrisTracker:
 
         return (min(xs), min(ys), max(xs), max(ys))
 
+    def get_eye_geometry(self, frame_shape, eye="left"):
+        """
+        Returns rigid skull-anchored eye canthi corners and eyelid landmarks.
+        """
+        if not self.face_detected or self.landmarks is None:
+            return None
+
+        h, w = frame_shape[:2]
+        if eye == "left":
+            p_corner_a = self._landmark_to_px(self.landmarks[263], w, h)
+            p_corner_b = self._landmark_to_px(self.landmarks[362], w, h)
+            p_top      = self._landmark_to_px(self.landmarks[386], w, h)
+            p_bottom   = self._landmark_to_px(self.landmarks[374], w, h)
+            indices = LEFT_EYE_INDICES
+        else:
+            p_corner_a = self._landmark_to_px(self.landmarks[33], w, h)
+            p_corner_b = self._landmark_to_px(self.landmarks[133], w, h)
+            p_top      = self._landmark_to_px(self.landmarks[159], w, h)
+            p_bottom   = self._landmark_to_px(self.landmarks[145], w, h)
+            indices = RIGHT_EYE_INDICES
+
+        c_left  = p_corner_a if p_corner_a[0] < p_corner_b[0] else p_corner_b
+        c_right = p_corner_b if p_corner_a[0] < p_corner_b[0] else p_corner_a
+
+        xs = [int(self.landmarks[i].x * w) for i in indices]
+        ys = [int(self.landmarks[i].y * h) for i in indices]
+
+        return {
+            "bbox": (min(xs), min(ys), max(xs), max(ys)),
+            "c_left": c_left,
+            "c_right": c_right,
+            "top": p_top,
+            "bottom": p_bottom
+        }
+
     # ── Drawing helpers ───────────────────────────────────────────────────────
 
     def draw_landmarks(self, frame):
-        """
-        Draw face tessellation and eye contour lines onto frame.
-        """
+        """Draw eye contours and face oval onto frame."""
         if not self.face_detected or self.landmarks is None:
             return
 
