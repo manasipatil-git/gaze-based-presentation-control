@@ -4,9 +4,9 @@
 #
 # WHY CALIBRATION IS REQUIRED (College explanation):
 #   Across a computer screen, human irises physically traverse only a narrow
-#   subset of the eye socket (typically between 0.35 and 0.65). Without calibration,
-#   the user could never reach the screen boundaries.
-#   Calibration calculates user-specific Gain (slope m) and Offset (intercept c).
+#   subset of the eye socket. Without calibration, the user could never reach
+#   the screen boundaries. Calibration calculates user-specific Gain (slope m)
+#   and Offset (intercept c).
 #
 # FORMULA:
 #   X_screen = mx * Gaze_x + cx
@@ -42,15 +42,14 @@ class Calibrator:
         self._current_samples = []
         self.calibration_data = []
 
-        # Default responsive linear mapping:
-        # Centered at ~0.50 with an amplification gain of 3.5x
-        self.mx = 3.5
-        self.cx = -1.25  # (0.50 * 3.5 - 1.25 = 0.50)
-        self.my = 4.0
-        self.cy = -1.30  # (0.45 * 4.0 - 1.30 = 0.50)
+        # Smooth, responsive default mapping:
+        # Centered at (0.50, 0.50) with 1.6x amplification
+        self.mx = 1.60
+        self.cx = -0.30  # (0.50 * 1.60 - 0.30 = 0.50)
+        self.my = 1.60
+        self.cy = -0.30
         self.is_calibrated = False
 
-        # Attempt to load previously saved calibration on startup
         self.load_calibration()
 
     def start_calibration(self):
@@ -78,7 +77,6 @@ class Calibrator:
                 "completed_just_now": False
             }
 
-        # Collect sample for the current point
         self._current_samples.append(gaze_point)
         progress = len(self._current_samples) / float(self.samples_per_point)
 
@@ -99,7 +97,6 @@ class Calibrator:
             self.current_point_idx += 1
             self._current_samples = []
 
-            # If all 5 points are done
             if self.current_point_idx >= len(self.POINTS):
                 self._compute_and_save_mapping()
                 self.is_calibrating = False
@@ -127,31 +124,30 @@ class Calibrator:
         target_ys = [d["target"][1] for d in self.calibration_data]
 
         # Fit X axis
-        if np.std(gaze_xs) > 0.005:
+        if np.std(gaze_xs) > 0.01:
             fitted_mx, fitted_cx = np.polyfit(gaze_xs, target_xs, 1)
-            # Safeguard: Clamp slope between 1.5 and 8.0 to prevent hypersensitivity
+            # Clamp slope between 1.0 and 4.5 to keep motion smooth and predictable
             if fitted_mx > 0:
-                self.mx = float(np.clip(fitted_mx, 1.5, 8.0))
+                self.mx = float(np.clip(fitted_mx, 1.0, 4.5))
             else:
-                self.mx = float(np.clip(fitted_mx, -8.0, -1.5))
+                self.mx = float(np.clip(fitted_mx, -4.5, -1.0))
             self.cx = float(np.mean(target_xs) - self.mx * np.mean(gaze_xs))
         else:
-            # Fallback if eye movement was very narrow
             mean_gx = np.mean(gaze_xs) if len(gaze_xs) > 0 else 0.50
-            self.mx = 3.5
+            self.mx = 1.60
             self.cx = float(0.50 - self.mx * mean_gx)
 
         # Fit Y axis
-        if np.std(gaze_ys) > 0.005:
+        if np.std(gaze_ys) > 0.01:
             fitted_my, fitted_cy = np.polyfit(gaze_ys, target_ys, 1)
             if fitted_my > 0:
-                self.my = float(np.clip(fitted_my, 1.5, 8.0))
+                self.my = float(np.clip(fitted_my, 1.0, 4.5))
             else:
-                self.my = float(np.clip(fitted_my, -8.0, -1.5))
+                self.my = float(np.clip(fitted_my, -4.5, -1.0))
             self.cy = float(np.mean(target_ys) - self.my * np.mean(gaze_ys))
         else:
-            mean_gy = np.mean(gaze_ys) if len(gaze_ys) > 0 else 0.45
-            self.my = 4.0
+            mean_gy = np.mean(gaze_ys) if len(gaze_ys) > 0 else 0.50
+            self.my = 1.60
             self.cy = float(0.50 - self.my * mean_gy)
 
         self.is_calibrated = True
@@ -187,9 +183,8 @@ class Calibrator:
             if data.get("is_calibrated"):
                 m = data["mapping"]
                 mx = m.get("mx", 1.0)
-                # Ignore corrupted calibration where mx was exactly 1.0 and cx was 0.0
+                # Ignore stale corrupted calibration where mx was 1.0 and cx was 0.0
                 if abs(mx - 1.0) < 1e-4 and abs(m.get("cx", 0.0)) < 1e-4:
-                    print("[FocusLock] Detected corrupted calibration.json — resetting to dynamic default.")
                     return False
 
                 self.mx = m["mx"]
@@ -207,7 +202,6 @@ class Calibrator:
     def map_to_screen(self, gaze_point):
         """
         Converts normalized gaze coordinates to calibrated screen coordinates [0.0, 1.0].
-        Provides responsive default mapping even before custom 5-point calibration.
         """
         if gaze_point is None:
             return None
@@ -216,7 +210,6 @@ class Calibrator:
         calib_x = self.mx * gx + self.cx
         calib_y = self.my * gy + self.cy
 
-        # Clamp output to valid screen bounds [0.0, 1.0]
         calib_x = float(np.clip(calib_x, 0.0, 1.0))
         calib_y = float(np.clip(calib_y, 0.0, 1.0))
 

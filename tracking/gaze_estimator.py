@@ -3,19 +3,19 @@
 # GazeEstimator converts raw iris pixel positions into a normalised gaze vector.
 #
 # WHAT "NORMALISED" MEANS HERE:
-#   We calculate a unitless ratio [0.0, 1.0] that represents where the iris
-#   is positioned relative to the eye bounding box (the eye socket).
+#   We calculate a scale-invariant ratio [0.0, 1.0] that represents where
+#   the iris is positioned relative to the eye bounding box (the eye socket).
 #
-# FORMULA:
-#   normalized_x = (iris_x - eye_min_x) / (eye_max_x - eye_min_x)
-#   normalized_y = (iris_y - eye_min_y) / (eye_max_y - eye_min_y)
+# PHYSIOLOGICAL RANGE EXPANSION (Key for accuracy):
+#   Because the iris has a physical radius (~12px) and the eye socket has
+#   anatomical limits, the iris center physically travels only within
+#   approximately [0.28, 0.72] of the eye width.
+#   If we don't expand this range, looking left/right only yields ~0.35-0.65,
+#   making screen trigger zones hard to reach without excessive head movement.
+#   We linearly map [0.28, 0.72] -> [0.0, 1.0] so natural glances easily reach edges!
 #
 # DUAL-EYE FUSION:
-#   When both eyes are detected, we calculate normalized gaze for each eye
-#   individually and take their average:
-#     gaze_x = (gaze_left_x + gaze_right_x) / 2
-#     gaze_y = (gaze_left_y + gaze_right_y) / 2
-#   This reduces landmark errors and increases signal reliability.
+#   Averages normalized vectors from both eyes to eliminate unilateral landmark noise.
 # ─────────────────────────────────────────────────────────────────────────────
 
 import numpy as np
@@ -28,7 +28,7 @@ class GazeEstimator:
 
     def _normalize_single_eye(self, iris_px, eye_bbox):
         """
-        Calculates normalized (x, y) for a single eye.
+        Calculates normalized (x, y) for a single eye with physiological range expansion.
         """
         if iris_px is None or eye_bbox is None:
             return None
@@ -42,11 +42,19 @@ class GazeEstimator:
         if eye_w <= 0 or eye_h <= 0:
             return None
 
-        # Normalized coordinates relative to eye boundaries
-        norm_x = (iris_x - x_min) / float(eye_w)
-        norm_y = (iris_y - y_min) / float(eye_h)
+        # 1. Normalized position relative to eyelid bounds [0.0, 1.0]
+        raw_norm_x = (iris_x - x_min) / float(eye_w)
+        raw_norm_y = (iris_y - y_min) / float(eye_h)
 
-        # Clamp to [0.0, 1.0] to prevent boundary overshoots
+        # 2. Physiological excursion expansion:
+        # Map physical iris travel span [0.28, 0.72] -> full [0.0, 1.0]
+        span_min_x, span_max_x = 0.28, 0.72
+        norm_x = (raw_norm_x - span_min_x) / (span_max_x - span_min_x)
+
+        span_min_y, span_max_y = 0.28, 0.72
+        norm_y = (raw_norm_y - span_min_y) / (span_max_y - span_min_y)
+
+        # 3. Clamp output to valid bounds [0.0, 1.0]
         norm_x = float(np.clip(norm_x, 0.0, 1.0))
         norm_y = float(np.clip(norm_y, 0.0, 1.0))
 
@@ -54,7 +62,7 @@ class GazeEstimator:
 
     def estimate(self, left_iris_px, left_eye_bbox, right_iris_px=None, right_eye_bbox=None):
         """
-        Estimate normalized gaze point combining both eyes if available.
+        Estimate normalized gaze point combining both eyes.
 
         Parameters
         ----------
@@ -71,7 +79,6 @@ class GazeEstimator:
         gaze_right = self._normalize_single_eye(right_iris_px, right_eye_bbox)
 
         if gaze_left is not None and gaze_right is not None:
-            # Average both eyes
             avg_x = (gaze_left[0] + gaze_right[0]) / 2.0
             avg_y = (gaze_left[1] + gaze_right[1]) / 2.0
             return avg_x, avg_y
